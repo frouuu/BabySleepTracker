@@ -124,8 +124,6 @@ public class CircularDayStats: UIView {
         }
     }
     
-    private var animationCompletionBlock: ((Bool) -> Void)?
-    
     override public init(frame: CGRect) {
         super.init(frame: frame)
         
@@ -373,9 +371,8 @@ public class CircularDayStats: UIView {
             let inset:CGFloat = radius/3.5
             // An adjustment of 270 degrees to position numbers correctly
             let points = circleCircumferencePoints(sides,x:x,y:y,radius:radius-inset,adjustment:270)
-            var index = 0
             
-            for p in points {
+            for (index, p) in points.enumerate() {
                 if index > 0 {
                     // Font name must be written exactly the same as the system stores it (some names are hyphenated, some aren't) and must exist on the user's device. Otherwise there will be a crash. (In real use checks and fallbacks would be created.) For a list of iOS 7 fonts see here: http://support.apple.com/en-us/ht5878
                     let aFont = UIFont(name: "Helvetica Light", size: 10)
@@ -399,7 +396,6 @@ public class CircularDayStats: UIView {
                     // draw the line of text
                     CTLineDraw(line, ctx)
                 }
-                index++
             }
             
         }

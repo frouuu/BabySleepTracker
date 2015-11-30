@@ -15,16 +15,19 @@ class SecondViewController: UIViewController, UITableViewDelegate, UITableViewDa
 
     @IBOutlet weak var napTimesTableView: UITableView!
     
+    @IBOutlet weak var barChartView: BarChartView!
+    
     var napTimes = [NSManagedObject]()
+    var page = 1
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
+        
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
+       
     }
 
     override func viewWillAppear(animated: Bool) {
@@ -35,9 +38,14 @@ class SecondViewController: UIViewController, UITableViewDelegate, UITableViewDa
     }
     
     func fetchData() {
+        let seconds = self.page * 7 * 24 * 60 * 60
+        let weekEarlier = NSDate().dateByAddingTimeInterval(NSTimeInterval(-seconds))
+        let fromDate = NSCalendar.currentCalendar().startOfDayForDate(weekEarlier)
+        
         let fetchRequest = NSFetchRequest(entityName: "NapTime")
         fetchRequest.sortDescriptors = [NSSortDescriptor(key: "startTime", ascending: false)]
-        fetchRequest.fetchLimit = 20;
+        fetchRequest.predicate = NSPredicate(format: "endTime > %@", fromDate)
+        fetchRequest.fetchLimit = 100;
         
         do {
             let results = try self.managedObjectContext.executeFetchRequest(fetchRequest)

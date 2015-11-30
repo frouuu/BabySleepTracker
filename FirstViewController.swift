@@ -130,8 +130,13 @@ class FirstViewController: UIViewController {
         }
         
         if self.startTime != 0 {
-            let startTimeNsDate = NSDate(timeIntervalSinceReferenceDate: self.startTime)
-            let startAngle = Double(startTimeNsDate.timeIntervalSinceDate(startOfDayForToday)  / 60 * 2 * M_PI / 1440)
+            var startTimeNsDate = NSDate(timeIntervalSinceReferenceDate: self.startTime)
+            var seconds = startTimeNsDate.timeIntervalSinceDate(startOfDayForToday)
+            if seconds < 0 {
+                seconds = 0
+                startTimeNsDate = startOfDayForToday
+            }
+            let startAngle = Double(seconds  / 60 * 2 * M_PI / 1440)
             let angle = Double(NSDate().timeIntervalSinceDate(startTimeNsDate) / 60 * 2 * M_PI / 1440)
             
             angles.append(startAngle)
