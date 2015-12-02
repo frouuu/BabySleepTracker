@@ -6,43 +6,52 @@
 //  Copyright © 2015 Magdalena Lazarecka. All rights reserved.
 //
 import UIKit
+import CoreData
 
 @IBDesignable class BarChartView: UIView {
     
-    //1 - the properties for the gradient
-    @IBInspectable var startColor: UIColor = UIColor.redColor()
-    @IBInspectable var endColor: UIColor = UIColor.greenColor()
     @IBInspectable var fillColor: UIColor = UIColor.whiteColor()
     @IBInspectable var napColor: UIColor = UIColor.purpleColor()
+    @IBInspectable var linesColor: UIColor = UIColor.whiteColor()
     
-    let margins : [CGFloat] = [20.0, 20.0, 30.0, 30.0]
+    let margins : [CGFloat] = [5.0, 15.0, 15.0, 15.0]
     let lineWidth : CGFloat = 1.5
     let gapWidth : CGFloat = 10.0
+    let maxBarWidth : CGFloat = 100.0
+    let wholeDaySeconds = 24 * 60 * 60
+    
+    var napDates : [String: [NSManagedObject]] = [:] {
+        didSet {
+            self.setNeedsDisplay()
+        }
+    }
     
     override func drawRect(rect: CGRect) {
-        let graphRect = CGRectMake(rect.minX + margins[3], rect.minY + margins[0], rect.width - margins[3] - margins[1], rect.height - margins[0] - margins[2])
+        let graphRect = CGRectMake(rect.minX + margins[3],
+            rect.minY + margins[0],
+            rect.width - margins[3] - margins[1],
+            rect.height - margins[0] - margins[2])
         
         let ctx = UIGraphicsGetCurrentContext()
         
-        // background
-        //let colors = [startColor.CGColor, endColor.CGColor]
-        //let colorSpace = CGColorSpaceCreateDeviceRGB()
-        //let colorLocations:[CGFloat] = [0.0, 1.0]
-        
-        //let gradient = CGGradientCreateWithColors(colorSpace,
-        //    colors,
-        //    colorLocations)
-        
-        //let startPoint = CGPoint.zero
-        //let endPoint   = CGPoint(x:0, y:self.bounds.height)
-        
-        //CGContextDrawLinearGradient(ctx, gradient, startPoint, endPoint, .DrawsBeforeStartLocation)
-        
         // lines
         CGContextSetLineWidth(ctx, lineWidth)
-        CGContextSetStrokeColorWithColor(ctx, UIColor.whiteColor().CGColor)
+        CGContextSetStrokeColorWithColor(ctx, linesColor.CGColor)
         
-        CGContextAddLines(ctx, [CGPointMake(graphRect.minX, graphRect.minY), CGPointMake(graphRect.minX, graphRect.maxY), CGPointMake(graphRect.maxX, graphRect.maxY)], 3)
+        CGContextSetAlpha(ctx, 0.3)
+        
+        // vertical lines
+        CGContextMoveToPoint(ctx, graphRect.minX, graphRect.minY)
+        CGContextAddLineToPoint(ctx, graphRect.minX, graphRect.maxY)
+        CGContextMoveToPoint(ctx, graphRect.maxX, graphRect.minY)
+        CGContextAddLineToPoint(ctx, graphRect.maxX, graphRect.maxY)
+        
+        // horizontal lines
+        let unit = graphRect.height / 24.0
+        for i in 0...24 {
+            CGContextMoveToPoint(ctx, graphRect.minX, graphRect.minY + unit * CGFloat(i))
+            CGContextAddLineToPoint(ctx, graphRect.maxX, graphRect.minY + unit * CGFloat(i))
+        }
         
         CGContextSetLineCap(ctx, CGLineCap.Butt)
         
@@ -51,38 +60,137 @@ import UIKit
         CGContextSetLineCap(ctx, CGLineCap.Round)
         
         CGContextStrokePath(ctx)
+        CGContextSetAlpha(ctx, 1.0)
+
+        if (!self.napDates.isEmpty) {
+            let dateArray : [String] = [String](self.napDates.keys)
         
-        CGContextSetAlpha(ctx, 0.4)
+            let sortedDateStringArray = dateArray.sort()
+            let barWidth = min((graphRect.width - gapWidth) / CGFloat(self.napDates.keys.count) - gapWidth, maxBarWidth)
+            
+            CGContextSetAlpha(ctx, 0.4)
+            for index in 0..<sortedDateStringArray.count {
+                drawBackgroundBars(ctx!, graphRect: graphRect, index: index, barWidth: barWidth)
+            }
+            
+            CGContextFillPath(ctx)
+            
+            UIGraphicsBeginImageContextWithOptions(rect.size, false, 0.0)
+            let imageCtx = UIGraphicsGetCurrentContext()
+            UIGraphicsPushContext(imageCtx!)
+            
+            UIColor.blackColor().setFill()
+            
+            for (index, dateString) in sortedDateStringArray.enumerate() {
+                addRectsForDailyData(imageCtx!, graphRect: graphRect, dateString: dateString, index: index, barWidth: barWidth)
+            }
         
-        for i in 1...7 {
-            drawDailyData(ctx!, graphRect: graphRect, index: i, countDays: 7/*, data: 0*/)
+            CGContextSetShadowWithColor(imageCtx, CGSizeZero, 4.0, UIColor.blackColor().CGColor)
+            
+            CGContextFillPath(imageCtx)
+            
+            let drawMask: CGImageRef = CGBitmapContextCreateImage(UIGraphicsGetCurrentContext())!
+            
+            UIGraphicsEndImageContext()
+            UIGraphicsPopContext()
+            
+            CGContextSaveGState(ctx)
+            
+            // Quartz2d uses a different co-ordinate system, where the origin is in the lower left corner
+            CGContextTranslateCTM(ctx, 0, rect.height);
+            CGContextScaleCTM(ctx, 1.0, -1.0);
+            
+            CGContextClipToMask(ctx, rect, drawMask)
+            
+            CGContextSetFillColorWithColor(ctx, napColor.CGColor)
+            CGContextSetAlpha(ctx, 0.8)
+
+            CGContextFillRect(ctx, rect)
+            
+            CGContextRestoreGState(ctx)
+            
+            drawText(ctx!, dateStringArray: sortedDateStringArray, rect: rect, barWidth: barWidth, graphRect: graphRect)
         }
-        
     }
     
-    func drawDailyData(ctx: CGContext, graphRect: CGRect, index: Int, countDays: Int/*, data: [NSDate]*/) {
-        // data
-        fillColor.setFill()
-        
-        let barWidth = graphRect.width / CGFloat(countDays) - gapWidth
-        
+    func drawBackgroundBars(ctx: CGContext, graphRect: CGRect, index: Int, barWidth: CGFloat) {
         let y1 = graphRect.minY
-        let x1 = graphRect.minX + CGFloat(index) * gapWidth + CGFloat(index - 1) * barWidth
+        let x1 = graphRect.minX + CGFloat(index + 1) * gapWidth + CGFloat(index) * barWidth
+        
+        fillColor.setFill()
         
         CGContextAddRect(ctx, CGRectMake(x1, y1, barWidth, graphRect.height - lineWidth))
         CGContextFillPath(ctx)
+    }
+    
+    func addRectsForDailyData(ctx: CGContext, graphRect: CGRect, dateString : String, index: Int, barWidth: CGFloat) {
+        let x1 = graphRect.minX + CGFloat(index + 1) * gapWidth + CGFloat(index) * barWidth
         
-        napColor.setFill()
+        let unit = graphRect.height / CGFloat(wholeDaySeconds)
         
-        let height = CGFloat(20)
-        let y11 = graphRect.maxY - lineWidth - CGFloat(10) - height
-        CGContextAddRect(ctx, CGRectMake(x1, y11, barWidth, height))
+        for napTime in self.napDates[dateString]! {
+            let startTime = napTime.valueForKey("startTime") as? NSDate
+            let endTime = napTime.valueForKey("endTime") as? NSDate
+            
+            let dateFormatter = NSDateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd"
+            let startOfDay = dateFormatter.dateFromString(dateString)
+            
+            var startTimeTimeInterval : NSTimeInterval = startTime!.timeIntervalSinceDate(startOfDay!)
+            if startTimeTimeInterval < 0 {
+                startTimeTimeInterval = 0
+            }
+            
+            var endTimeTimeInterval : NSTimeInterval = endTime!.timeIntervalSinceDate(startOfDay!)
+            if endTimeTimeInterval > Double(wholeDaySeconds) {
+                endTimeTimeInterval = Double(wholeDaySeconds)
+            }
+            
+            let height = unit * CGFloat(endTimeTimeInterval - startTimeTimeInterval)
+            let y0 = graphRect.maxY - lineWidth - CGFloat(startTimeTimeInterval) * unit - height
+            
+            CGContextAddRect(ctx, CGRectMake(x1, y0, barWidth, height))
+        }
+    }
+    
+    func drawText(ctx: CGContext, dateStringArray: [String], rect: CGRect, barWidth: CGFloat, graphRect: CGRect) {
+        let unit = graphRect.height / 24.0
         
-        let height2 = CGFloat(30)
-        let y12 = graphRect.maxY - lineWidth - CGFloat(40) - height2
-        CGContextAddRect(ctx, CGRectMake(x1, y12, barWidth, height2))
+        CGContextTranslateCTM(ctx, 0.0, rect.height)
+        CGContextScaleCTM(ctx, 1.0, -1.0)
         
-        CGContextFillPath(ctx)
+        let aFont = UIFont(name: "Helvetica Light", size: 7)
+        let attr:CFDictionaryRef = [NSFontAttributeName:aFont!, NSForegroundColorAttributeName:UIColor.whiteColor()]
+        
+        for (index, dateString) in dateStringArray.enumerate() {
+            let x1 = graphRect.minX + CGFloat(index + 1) * gapWidth + CGFloat(index) * barWidth
+            
+            let text = CFAttributedStringCreate(nil, dateString, attr)
+            let line = CTLineCreateWithAttributedString(text)
+            let bounds = CTLineGetBoundsWithOptions(line, CTLineBoundsOptions.UseOpticalBounds)
+            CGContextSetLineWidth(ctx, 1.5)
+            CGContextSetTextDrawingMode(ctx, CGTextDrawingMode.Fill)
+        
+            let xn = x1 + barWidth / 2 - bounds.width/2
+            let yn = rect.maxY - graphRect.maxY - 8.0 - bounds.midY
+            
+            CGContextSetTextPosition(ctx, xn, yn)
+            CTLineDraw(line, ctx)
+        }
+        
+        for i in 0...24 {
+            let text = CFAttributedStringCreate(nil, i.description, attr)
+            let line = CTLineCreateWithAttributedString(text)
+            let bounds = CTLineGetBoundsWithOptions(line, CTLineBoundsOptions.UseOpticalBounds)
+            CGContextSetLineWidth(ctx, 1.5)
+            CGContextSetTextDrawingMode(ctx, CGTextDrawingMode.Fill)
+            
+            let xn = graphRect.minX - 8.0 - bounds.width/2
+            let yn = rect.maxY - graphRect.maxY + unit * CGFloat(i) - bounds.midY
+            
+            CGContextSetTextPosition(ctx, xn, yn)
+            CTLineDraw(line, ctx)
+        }
     }
     
 }

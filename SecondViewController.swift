@@ -14,11 +14,11 @@ class SecondViewController: UIViewController, UITableViewDelegate, UITableViewDa
     let managedObjectContext = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
 
     @IBOutlet weak var napTimesTableView: UITableView!
-    
     @IBOutlet weak var barChartView: BarChartView!
     
     var napTimes = [NSManagedObject]()
     var page = 1
+    var napData = [String : [NSManagedObject]]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -35,6 +35,7 @@ class SecondViewController: UIViewController, UITableViewDelegate, UITableViewDa
         
         fetchData()
         self.napTimesTableView.reloadData();
+        self.barChartView.napDates = self.napData
     }
     
     func fetchData() {
@@ -51,6 +52,36 @@ class SecondViewController: UIViewController, UITableViewDelegate, UITableViewDa
             let results = try self.managedObjectContext.executeFetchRequest(fetchRequest)
             
             napTimes = results as! [NSManagedObject]
+            napData.removeAll()
+            
+            for napTime in napTimes {
+                let startTime = napTime.valueForKey("startTime") as? NSDate
+                let endTime = napTime.valueForKey("endTime") as? NSDate
+                
+                let dateFormatter = NSDateFormatter()
+                dateFormatter.dateFormat = "yyyy-MM-dd";
+                
+                let startDateString = dateFormatter.stringFromDate(startTime!)
+                let endDateString = dateFormatter.stringFromDate(endTime!)
+                
+                if startTime!.compare(weekEarlier) == NSComparisonResult.OrderedDescending {
+                    if napData[startDateString] == nil {
+                        napData[startDateString] = [napTime]
+                    }
+                    else {
+                        (napData[startDateString])!.append(napTime)
+                    }
+                }
+                
+                if !startDateString.isEqual(endDateString) || startTime!.compare(weekEarlier) == NSComparisonResult.OrderedAscending {
+                    if napData[endDateString] == nil {
+                        napData[endDateString] = [napTime]
+                    }
+                    else {
+                        (napData[endDateString])!.append(napTime)
+                    }
+                }
+            }
         } catch let error as NSError {
             print("Could not fetch \(error), \(error.userInfo)")
         }

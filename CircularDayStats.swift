@@ -77,12 +77,6 @@ public class CircularDayStats: UIView {
         }
     }
     
-    @IBInspectable public var glowAmount: CGFloat = 1.0 {//Between 0 and 1
-        didSet {
-            progressLayer.glowAmount = UtilityFunctions.Clamp(glowAmount, minMax: (0, 1))
-        }
-    }
-    
     @IBInspectable public var progressThickness: CGFloat = 0.4 {//Between 0 and 1
         didSet {
             progressThickness = UtilityFunctions.Clamp(progressThickness, minMax: (0, 1))
@@ -163,7 +157,6 @@ public class CircularDayStats: UIView {
     }
     
     private func refreshValues() {
-        progressLayer.glowAmount = UtilityFunctions.Clamp(glowAmount, minMax: (0, 1))
         progressLayer.progressThickness = progressThickness/2
         progressLayer.trackColor = trackColor
         progressLayer.trackThickness = trackThickness/2
@@ -193,20 +186,11 @@ public class CircularDayStats: UIView {
         var radius: CGFloat!
         var statsData : [Double]?
         var currentTimeAngle : Double!
-        var glowAmount: CGFloat!
         var progressThickness: CGFloat!
         var trackThickness: CGFloat!
         var trackColor: UIColor!
         var progressInsideFillColor: UIColor = UIColor.clearColor()
         var color: UIColor!
-        
-        
-        private struct GlowConstants {
-            private static let sizeToGlowRatio: CGFloat = 0.00015
-            static func glowAmountForAngle(angle: Int, glowAmount: CGFloat, size: CGFloat) -> CGFloat {
-                    return 360 * size * sizeToGlowRatio * glowAmount
-            }
-        }
         
         override init(layer: AnyObject) {
             super.init(layer: layer)
@@ -214,7 +198,6 @@ public class CircularDayStats: UIView {
             let progressLayer = layer as! CircularDayStatsViewLayer
             
             radius            = progressLayer.radius
-            glowAmount        = progressLayer.glowAmount
             progressThickness = progressLayer.progressThickness
             trackThickness    = progressLayer.trackThickness
             trackColor        = progressLayer.trackColor
@@ -300,10 +283,7 @@ public class CircularDayStats: UIView {
                     CGContextAddArc(imageCtx, x0, y0, arcRadius, fromAngle, toAngle, 1)
                 }
             
-                let glowValue = GlowConstants.glowAmountForAngle(90, glowAmount: glowAmount, size: size.width)
-                if glowValue > 0 {
-                    CGContextSetShadowWithColor(imageCtx, CGSizeZero, glowValue, UIColor.blackColor().CGColor)
-                }
+                CGContextSetShadowWithColor(imageCtx, CGSizeZero, 6.0, UIColor.blackColor().CGColor)
                 
                 CGContextSetLineCap(imageCtx, CGLineCap.Butt)
                 CGContextSetLineWidth(imageCtx, progressLineWidth)
