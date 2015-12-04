@@ -13,16 +13,20 @@ class SecondViewController: UIViewController, UITableViewDelegate, UITableViewDa
     
     let managedObjectContext = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
 
-    @IBOutlet weak var napTimesTableView: UITableView!
     @IBOutlet weak var barChartView: BarChartView!
+    @IBOutlet weak var segmentedControl: UISegmentedControl!
     
     var napTimes = [NSManagedObject]()
     var page = 1
-    var napData = [String : [NSManagedObject]]()
+    var napData = [String : [ChartData]]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        let aSelector : Selector = "segmentedControlTapped"
+        self.segmentedControl.addTarget(self, action: aSelector, forControlEvents: .ValueChanged)
+        
+        self.barChartView.hidden = false
     }
 
     override func didReceiveMemoryWarning() {
@@ -34,7 +38,6 @@ class SecondViewController: UIViewController, UITableViewDelegate, UITableViewDa
         super.viewWillAppear(animated)
         
         fetchData()
-        self.napTimesTableView.reloadData();
         self.barChartView.napDates = self.napData
     }
     
@@ -65,28 +68,63 @@ class SecondViewController: UIViewController, UITableViewDelegate, UITableViewDa
                 let endDateString = dateFormatter.stringFromDate(endTime!)
                 
                 if startTime!.compare(weekEarlier) == NSComparisonResult.OrderedDescending {
+                    let chartData = ChartData.init(startTime1: startTime!, endTime1: endTime!)
                     if napData[startDateString] == nil {
-                        napData[startDateString] = [napTime]
+                        napData[startDateString] = [chartData]
                     }
                     else {
-                        (napData[startDateString])!.append(napTime)
+                        (napData[startDateString])!.append(chartData)
                     }
                 }
                 
                 if !startDateString.isEqual(endDateString) || startTime!.compare(weekEarlier) == NSComparisonResult.OrderedAscending {
+                    let chartData = ChartData.init(startTime1: startTime!, endTime1: endTime!)
                     if napData[endDateString] == nil {
-                        napData[endDateString] = [napTime]
+                        napData[endDateString] = [chartData]
                     }
                     else {
-                        (napData[endDateString])!.append(napTime)
+                        (napData[endDateString])!.append(chartData)
                     }
                 }
             }
         } catch let error as NSError {
             print("Could not fetch \(error), \(error.userInfo)")
         }
-
     }
+    
+    func segmentedControlTapped() {
+//        switch self.segmentedControl.selectedSegmentIndex {
+//        case 0:
+//            
+//        default:
+//            self.napTimesTableView.hidden = false
+//        }
+    }
+    
+    func elapsedTimeString(startTime : NSDate, end endTime : NSDate) -> String {
+        var elapsedTime: NSTimeInterval = endTime.timeIntervalSinceDate(startTime)
+        
+        //calculate the hours in elapsed time.
+        let hours = UInt8(elapsedTime / 3600.0)
+        elapsedTime -= (NSTimeInterval(hours) * 3600)
+        
+        //calculate the minutes in elapsed time.
+        let minutes = UInt8(elapsedTime / 60.0)
+        elapsedTime -= (NSTimeInterval(minutes) * 60)
+        
+        //calculate the seconds in elapsed time.
+        let seconds = UInt8(elapsedTime)
+        elapsedTime -= NSTimeInterval(seconds)
+        
+        //add the leading zero for minutes, seconds and millseconds and store them as string constants
+        
+        let strHours = String(format: "%02d", hours)
+        let strMinutes = String(format: "%02d", minutes)
+        let strSeconds = String(format: "%02d", seconds)
+        
+        return "\(strHours):\(strMinutes):\(strSeconds)"
+    }
+
     
     // UITableViewDataSource protocol
     
@@ -116,30 +154,5 @@ class SecondViewController: UIViewController, UITableViewDelegate, UITableViewDa
         numberOfRowsInSection section: Int) -> Int {
             return napTimes.count;
     }
-    
-    func elapsedTimeString(startTime : NSDate, end endTime : NSDate) -> String {
-        var elapsedTime: NSTimeInterval = endTime.timeIntervalSinceDate(startTime)
-        
-        //calculate the hours in elapsed time.
-        let hours = UInt8(elapsedTime / 3600.0)
-        elapsedTime -= (NSTimeInterval(hours) * 3600)
-        
-        //calculate the minutes in elapsed time.
-        let minutes = UInt8(elapsedTime / 60.0)
-        elapsedTime -= (NSTimeInterval(minutes) * 60)
-        
-        //calculate the seconds in elapsed time.
-        let seconds = UInt8(elapsedTime)
-        elapsedTime -= NSTimeInterval(seconds)
-        
-        //add the leading zero for minutes, seconds and millseconds and store them as string constants
-            
-        let strHours = String(format: "%02d", hours)
-        let strMinutes = String(format: "%02d", minutes)
-        let strSeconds = String(format: "%02d", seconds)
-        
-        return "\(strHours):\(strMinutes):\(strSeconds)"
-    }
-
 }
 

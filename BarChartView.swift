@@ -10,6 +10,11 @@ import CoreData
 
 @IBDesignable class BarChartView: UIView {
     
+    @IBInspectable var gradient1Color: UIColor = UIColor.whiteColor()
+    @IBInspectable var gradient2Color: UIColor = UIColor.purpleColor()
+    @IBInspectable var gradient3Color: UIColor = UIColor.redColor()
+    @IBInspectable var gradient4Color: UIColor = UIColor.greenColor()
+    
     @IBInspectable var fillColor: UIColor = UIColor.whiteColor()
     @IBInspectable var napColor: UIColor = UIColor.purpleColor()
     @IBInspectable var linesColor: UIColor = UIColor.whiteColor()
@@ -20,7 +25,7 @@ import CoreData
     let maxBarWidth : CGFloat = 100.0
     let wholeDaySeconds = 24 * 60 * 60
     
-    var napDates : [String: [NSManagedObject]] = [:] {
+    var napDates : [String: [ChartData]] = [:] {
         didSet {
             self.setNeedsDisplay()
         }
@@ -75,6 +80,8 @@ import CoreData
             
             CGContextFillPath(ctx)
             
+            CGContextSetAlpha(ctx, 1.0)
+            
             UIGraphicsBeginImageContextWithOptions(rect.size, false, 0.0)
             let imageCtx = UIGraphicsGetCurrentContext()
             UIGraphicsPushContext(imageCtx!)
@@ -102,10 +109,13 @@ import CoreData
             
             CGContextClipToMask(ctx, rect, drawMask)
             
-            CGContextSetFillColorWithColor(ctx, napColor.CGColor)
-            CGContextSetAlpha(ctx, 0.8)
-
-            CGContextFillRect(ctx, rect)
+            let gradientColors = [gradient1Color.CGColor, gradient2Color.CGColor, gradient3Color.CGColor, gradient4Color.CGColor]
+            let colorSpace = CGColorSpaceCreateDeviceRGB()
+            let colorLocations:[CGFloat] = [0.0, 0.25, 0.5, 0.75, 1.0]
+            let gradient = CGGradientCreateWithColors(colorSpace, gradientColors, colorLocations)
+            
+            CGContextSetAlpha(ctx, 0.7)
+            CGContextDrawLinearGradient(ctx, gradient, CGPoint.zero, CGPoint(x: 0, y: rect.height), CGGradientDrawingOptions.DrawsBeforeStartLocation)
             
             CGContextRestoreGState(ctx)
             
@@ -129,8 +139,8 @@ import CoreData
         let unit = graphRect.height / CGFloat(wholeDaySeconds)
         
         for napTime in self.napDates[dateString]! {
-            let startTime = napTime.valueForKey("startTime") as? NSDate
-            let endTime = napTime.valueForKey("endTime") as? NSDate
+            let startTime = napTime.startTime
+            let endTime = napTime.endTime
             
             let dateFormatter = NSDateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd"
