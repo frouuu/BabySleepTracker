@@ -9,7 +9,7 @@
 import UIKit
 import CoreData
 
-class SecondViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+class SecondViewController: UIViewController {
     
     let managedObjectContext = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
 
@@ -38,13 +38,12 @@ class SecondViewController: UIViewController, UITableViewDelegate, UITableViewDa
         super.viewWillAppear(animated)
         
         fetchData()
-        self.barChartView.napDates = self.napData
     }
     
     func fetchData() {
-        let seconds = self.page * 7 * 24 * 60 * 60
-        let weekEarlier = NSDate().dateByAddingTimeInterval(NSTimeInterval(-seconds))
-        let fromDate = NSCalendar.currentCalendar().startOfDayForDate(weekEarlier)
+        let seconds = self.page * 6 * 24 * 60 * 60
+        let startOfToday = NSCalendar.currentCalendar().startOfDayForDate(NSDate())
+        let fromDate = startOfToday.dateByAddingTimeInterval(NSTimeInterval(-seconds))
         
         let fetchRequest = NSFetchRequest(entityName: "NapTime")
         fetchRequest.sortDescriptors = [NSSortDescriptor(key: "startTime", ascending: false)]
@@ -57,18 +56,39 @@ class SecondViewController: UIViewController, UITableViewDelegate, UITableViewDa
             napTimes = results as! [NSManagedObject]
             napData.removeAll()
             
+            var labels = [String:String]()
+            
+            let currentCalendar = NSCalendar.currentCalendar()
+
             for napTime in napTimes {
-                let startTime = napTime.valueForKey("startTime") as? NSDate
-                let endTime = napTime.valueForKey("endTime") as? NSDate
+                let startDate = napTime.valueForKey("startTime") as? NSDate
+                let endDate = napTime.valueForKey("endTime") as? NSDate
+                
+                if startDate == nil || endDate == nil {
+                    continue
+                }
                 
                 let dateFormatter = NSDateFormatter()
                 dateFormatter.dateFormat = "yyyy-MM-dd";
                 
-                let startDateString = dateFormatter.stringFromDate(startTime!)
-                let endDateString = dateFormatter.stringFromDate(endTime!)
+                let startDateString = dateFormatter.stringFromDate(startDate!)
+                let endDateString = dateFormatter.stringFromDate(endDate!)
                 
-                if startTime!.compare(weekEarlier) == NSComparisonResult.OrderedDescending {
-                    let chartData = ChartData.init(startTime1: startTime!, endTime1: endTime!)
+                
+                if startDate!.compare(fromDate) == NSComparisonResult.OrderedDescending {
+                    let endDate2 : NSDate
+                    
+                    if !currentCalendar.isDate(startDate!, inSameDayAsDate: endDate!) {
+                        let startOfStartDate = NSCalendar.currentCalendar().startOfDayForDate(startDate!)
+                        
+                        endDate2 = startOfStartDate.dateByAddingTimeInterval(24 * 60 * 60)
+                    }
+                    else {
+                        endDate2 = endDate!
+                    }
+                    
+                    let chartData = ChartData(startTime: startDate!, endTime: endDate2)
+                    
                     if napData[startDateString] == nil {
                         napData[startDateString] = [chartData]
                     }
@@ -77,8 +97,11 @@ class SecondViewController: UIViewController, UITableViewDelegate, UITableViewDa
                     }
                 }
                 
-                if !startDateString.isEqual(endDateString) || startTime!.compare(weekEarlier) == NSComparisonResult.OrderedAscending {
-                    let chartData = ChartData.init(startTime1: startTime!, endTime1: endTime!)
+                if !currentCalendar.isDate(startDate!, inSameDayAsDate: endDate!) {
+                    let startOfEndDate = NSCalendar.currentCalendar().startOfDayForDate(endDate!)
+                    
+                    let chartData = ChartData(startTime: startOfEndDate, endTime: endDate!)
+                    
                     if napData[endDateString] == nil {
                         napData[endDateString] = [chartData]
                     }
@@ -87,18 +110,31 @@ class SecondViewController: UIViewController, UITableViewDelegate, UITableViewDa
                     }
                 }
             }
+            
+            for dateString in napData.keys {
+                let dateFormatter = NSDateFormatter()
+                dateFormatter.dateFormat = "E";
+                
+                let firstData = napData[dateString]![0] as ChartData
+                let startDateInFirstData = firstData.startTime
+                labels[dateString] = dateFormatter.stringFromDate(startDateInFirstData)
+            }
+            
+            self.barChartView.napDates = self.napData
+            self.barChartView.labels = labels
+            
         } catch let error as NSError {
             print("Could not fetch \(error), \(error.userInfo)")
         }
     }
     
     func segmentedControlTapped() {
-//        switch self.segmentedControl.selectedSegmentIndex {
-//        case 0:
-//            
-//        default:
-//            self.napTimesTableView.hidden = false
-//        }
+        switch self.segmentedControl.selectedSegmentIndex {
+        case 0:
+            self.barChartView.chartType = .Details
+        default:
+            self.barChartView.chartType = .Sum
+        }
     }
     
     func elapsedTimeString(startTime : NSDate, end endTime : NSDate) -> String {
@@ -125,34 +161,5 @@ class SecondViewController: UIViewController, UITableViewDelegate, UITableViewDa
         return "\(strHours):\(strMinutes):\(strSeconds)"
     }
 
-    
-    // UITableViewDataSource protocol
-    
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-            let cell = tableView.dequeueReusableCellWithIdentifier("NapTimeTableViewCell") as! NapTimeTableViewCell
-            
-            let napTime = napTimes[indexPath.row]
-            let startTime = napTime.valueForKey("startTime") as? NSDate
-            let endTime = napTime.valueForKey("endTime") as? NSDate
-            
-            if startTime == nil || endTime == nil {
-                cell.startTimeLabel.text = "Error"
-                cell.elapsedTimeLabel.text = "Error"
-                return cell
-            }
-
-            let dateFormatter = NSDateFormatter()
-            dateFormatter.dateFormat = "yyyy-MM-dd 'at' HH:mm";
-            
-            cell.startTimeLabel.text   = dateFormatter.stringFromDate(startTime!)
-            cell.elapsedTimeLabel.text = elapsedTimeString(startTime!, end: endTime!)
-            
-            return cell
-    }
-    
-    func tableView(tableView: UITableView,
-        numberOfRowsInSection section: Int) -> Int {
-            return napTimes.count;
-    }
 }
 

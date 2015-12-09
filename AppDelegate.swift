@@ -16,9 +16,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
+        let tintColor : UIColor = UIColorFromRGB(0x3e3a40)
         
-        UITabBar.appearance().tintColor = UIColor.init(red: 33/256, green: 34/255, blue: 43/256, alpha: 1.0)
+        UITabBar.appearance().tintColor = tintColor
+        UITabBar.appearance().barTintColor = UIColorFromRGB(0xc4c1ce)
         
+        UINavigationBar.appearance().tintColor = tintColor
+        UINavigationBar.appearance().barTintColor = UIColorFromRGB(0xc4c1ce)
+        UINavigationBar.appearance().translucent = true
         return true
     }
 

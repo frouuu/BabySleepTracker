@@ -48,7 +48,8 @@ class FirstViewController: UIViewController {
             
             scheduleTimers()
         }
-
+        
+        refreshLabelsVisibility()
     }
     
     override func viewWillAppear(animated: Bool) {
@@ -79,6 +80,7 @@ class FirstViewController: UIViewController {
             scheduleTimers()
         }
         
+        refreshLabelsVisibility()
         fetchData()
         refreshCircle()
     }
@@ -152,6 +154,7 @@ class FirstViewController: UIViewController {
     func startTapped() {
         stopWatchButton.setTitle("Stop", forState: UIControlState.Normal);
         self.startTime = NSDate.timeIntervalSinceReferenceDate()
+        refreshLabelsVisibility()
         
         scheduleTimers()
         
@@ -180,6 +183,7 @@ class FirstViewController: UIViewController {
         nap.endTime = NSDate()
         
         self.startTime = 0
+        self.refreshLabelsVisibility()
         let defaults = NSUserDefaults.standardUserDefaults()
         defaults.setDouble(0, forKey: startKey)
         defaults.synchronize()
@@ -189,6 +193,8 @@ class FirstViewController: UIViewController {
         } catch {
             fatalError("Failure to save context: \(error)")
         }
+        
+        refreshCircle()
     }
     
     func updateTimeOnStopWatch() {
@@ -234,7 +240,18 @@ class FirstViewController: UIViewController {
         let dateFormatter = NSDateFormatter()
         dateFormatter.dateFormat = "HH:mm"
         
-        self.startTimeLabel.text = dateFormatter.stringFromDate(NSDate(timeIntervalSinceReferenceDate: self.startTime))
+        self.startTimeLabel.text = "Started at \(dateFormatter.stringFromDate(NSDate(timeIntervalSinceReferenceDate: self.startTime)))"
+    }
+    
+    func refreshLabelsVisibility() {
+        if self.startTime == 0 {
+            self.stopWatchLabel.hidden = true
+            self.startTimeLabel.hidden = true
+        }
+        else {
+            self.stopWatchLabel.hidden = false
+            self.startTimeLabel.hidden = false
+        }
     }
 
     @IBAction func stopWatchButtonTapped(sender: AnyObject) {

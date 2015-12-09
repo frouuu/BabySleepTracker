@@ -18,8 +18,12 @@ class ListViewController: UIViewController, UITableViewDelegate, UITableViewData
     var napTimes = [NSManagedObject]()
     var page = 1
     
+    // MARK: UIViewController
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        navigationItem.leftBarButtonItem = editButtonItem()
         
         self.napTimesTableView.backgroundColor = UIColor.clearColor()
     }
@@ -34,6 +38,12 @@ class ListViewController: UIViewController, UITableViewDelegate, UITableViewData
         
         fetchData()
         self.napTimesTableView.reloadData();
+    }
+    
+    override func setEditing(_editing: Bool, animated: Bool) {
+        self.napTimesTableView.editing = _editing
+        
+        super.setEditing(editing, animated: animated)
     }
     
     func fetchData() {
@@ -75,8 +85,36 @@ class ListViewController: UIViewController, UITableViewDelegate, UITableViewData
         return "\(strHours):\(strMinutes):\(strSeconds)"
     }
     
+    // MARK: - Navigation
     
-    // UITableViewDataSource protocol
+    // In a storyboard-based application, you will often want to do a little preparation before navigation
+    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+        
+        // Get the new view controller using segue.destinationViewController.
+        // Pass the selected object to the new view controller.
+        
+        if segue.identifier == "ShowDetail" {
+            let addViewController = segue.destinationViewController as! AddViewController
+            
+            if let selectedNapTimeCell = sender as? NapTimeTableViewCell {
+                let indexPath = self.napTimesTableView.indexPathForCell(selectedNapTimeCell)!
+                let selectedNapTime = napTimes[indexPath.row]
+                
+                addViewController.napTime = selectedNapTime
+            }
+        }
+        else if segue.identifier == "AddItem" {
+        }
+    }
+    
+    @IBAction func unwindToNapList(sender: UIStoryboardSegue) {
+        fetchData()
+        
+        self.napTimesTableView.reloadData();
+    }
+    
+    
+    // MARK: UITableViewDataSource protocol
     
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCellWithIdentifier("NapTimeTableViewCell") as! NapTimeTableViewCell
@@ -91,11 +129,33 @@ class ListViewController: UIViewController, UITableViewDelegate, UITableViewData
             return cell
         }
         
-        let dateFormatter = NSDateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd 'at' HH:mm";
+        if NSCalendar.currentCalendar().isDateInToday(startTime!) {
+            let dateFormatter = NSDateFormatter()
+            dateFormatter.dateFormat = "'Today at' HH:mm";
+            
+            cell.startTimeLabel.text   = dateFormatter.stringFromDate(startTime!)
+        }
+        else if NSCalendar.currentCalendar().isDateInYesterday(startTime!) {
+            let dateFormatter = NSDateFormatter()
+            dateFormatter.dateFormat = "'Yesterday at' HH:mm";
+            
+            cell.startTimeLabel.text   = dateFormatter.stringFromDate(startTime!)
+        }
+        else {
+            let dateFormatter = NSDateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd 'at' HH:mm";
+            
+            cell.startTimeLabel.text   = dateFormatter.stringFromDate(startTime!)
+        }
         
-        cell.startTimeLabel.text   = dateFormatter.stringFromDate(startTime!)
         cell.elapsedTimeLabel.text = elapsedTimeString(startTime!, end: endTime!)
+        
+        if indexPath.row % 2 == 0 {
+            cell.backgroundColor = cell.bgColor1
+        }
+        else {
+            cell.backgroundColor = cell.bgColor2
+        }
         
         return cell
     }
@@ -103,6 +163,37 @@ class ListViewController: UIViewController, UITableViewDelegate, UITableViewData
     func tableView(tableView: UITableView,
         numberOfRowsInSection section: Int) -> Int {
             return napTimes.count;
+    }
+    
+    // Override to support editing the table view.
+    func tableView(_tableView: UITableView, commitEditingStyle editingStyle: UITableViewCellEditingStyle, forRowAtIndexPath indexPath: NSIndexPath) {
+        
+        if editingStyle == .Delete {
+            let selectedNapTime = napTimes[indexPath.row]
+            
+            self.managedObjectContext.deleteObject(selectedNapTime)
+            
+            do {
+                try self.managedObjectContext.save()
+                
+                // Delete the row from the data source
+                _tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
+            }
+            catch let error as NSError  {
+                print("Could not delete \(error), \(error.userInfo)")
+            }
+
+            
+        }
+        else if editingStyle == .Insert {
+            
+        }
+    }
+    
+    // Override to support conditional editing of the table view.
+    func tableView(tableView: UITableView, canEditRowAtIndexPath indexPath: NSIndexPath) -> Bool {
+        // Return false if you do not want the specified item to be editable.
+        return true
     }
 }
 
