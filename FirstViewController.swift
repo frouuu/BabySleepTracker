@@ -177,16 +177,11 @@ class FirstViewController: UIViewController {
         
         stopWatchButton.setTitle("Start", forState: UIControlState.Normal);
         
+        // core data
         let nap = NSEntityDescription.insertNewObjectForEntityForName("NapTime", inManagedObjectContext: self.managedObjectContext) as! NapTime
         
         nap.startTime = NSDate(timeIntervalSinceReferenceDate: self.startTime)
         nap.endTime = NSDate()
-        
-        self.startTime = 0
-        self.refreshLabelsVisibility()
-        let defaults = NSUserDefaults.standardUserDefaults()
-        defaults.setDouble(0, forKey: startKey)
-        defaults.synchronize()
 
         do {
             try self.managedObjectContext.save()
@@ -194,6 +189,13 @@ class FirstViewController: UIViewController {
             fatalError("Failure to save context: \(error)")
         }
         
+        self.startTime = 0
+        self.refreshLabelsVisibility()
+        let defaults = NSUserDefaults.standardUserDefaults()
+        defaults.setDouble(0, forKey: startKey)
+        defaults.synchronize()
+        
+        fetchData()
         refreshCircle()
     }
     
