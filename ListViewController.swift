@@ -43,7 +43,7 @@ class ListViewController: UIViewController, UITableViewDelegate, UITableViewData
     override func setEditing(_editing: Bool, animated: Bool) {
         self.napTimesTableView.editing = _editing
         
-        super.setEditing(editing, animated: animated)
+        super.setEditing(_editing, animated: animated)
     }
     
     func fetchData() {
@@ -175,15 +175,13 @@ class ListViewController: UIViewController, UITableViewDelegate, UITableViewData
             
             do {
                 try self.managedObjectContext.save()
-                
-                // Delete the row from the data source
-                _tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
             }
             catch let error as NSError  {
                 print("Could not delete \(error), \(error.userInfo)")
             }
 
-            
+            fetchData()
+            self.napTimesTableView.reloadData()
         }
         else if editingStyle == .Insert {
             

@@ -12,12 +12,14 @@ import CoreData
 
 class AddViewController: UIViewController {
     
+    let managedObjectContext = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
+    
     @IBOutlet weak var saveButton: UIBarButtonItem!
     @IBOutlet weak var startDatePicker: UIDatePicker!
     @IBOutlet weak var endDatePicker: UIDatePicker!
+    @IBOutlet weak var startDateParentView: UIView!
     
     var napTime : NSManagedObject?
-   
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -30,9 +32,93 @@ class AddViewController: UIViewController {
             endDatePicker.date = endTime!
         }
         
-        self.checkValidDates()
+        checkValidDates()
     }
     
+    // MARK: Navigation
+    
+    // This method lets you configure a view controller before it's presented.
+    /*override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+    }*/
+    
+    // This method lets return to list of naps
+    func unwind() {
+        if presentingViewController == nil {
+            navigationController!.popViewControllerAnimated(true)
+        }
+        else {
+            dismissViewControllerAnimated(true, completion: nil)
+        }
+    }
+    
+    
+    // MARK: Save and Cancel
+    
+    @IBAction func cancelAction(sender: UIBarButtonItem) {
+        if presentingViewController == nil {
+            navigationController!.popViewControllerAnimated(true)
+        }
+        else {
+            dismissViewControllerAnimated(true, completion: nil)
+        }
+    }
+    
+    @IBAction func saveAction(sender: UIBarButtonItem) {
+        if !checkValidDates() {
+            saveButton.enabled = false
+            return
+        }
+        
+        let entity =  NSEntityDescription.entityForName("NapTime", inManagedObjectContext:managedObjectContext)
+        
+        let startDate = startDatePicker.date
+        let endDate = endDatePicker.date
+        
+        if napTime == nil {
+            napTime = NSManagedObject(entity: entity!, insertIntoManagedObjectContext: managedObjectContext)
+        }
+        else {
+            let oldStartDate = napTime!.valueForKey("startTime") as? NSDate
+            let oldEndDate = napTime!.valueForKey("endTime") as? NSDate
+            
+            if oldStartDate?.compare(startDate) == .OrderedSame && oldEndDate?.compare(endDate) == .OrderedSame {
+                unwind()
+                
+                return
+            }
+        }
+        
+        if checkCollisions() {
+            let alertController = UIAlertController(title: "Error", message:
+                "Dates collision", preferredStyle: UIAlertControllerStyle.Alert)
+            alertController.addAction(UIAlertAction(title: "Dismiss", style: UIAlertActionStyle.Default,handler: nil))
+            
+            self.presentViewController(alertController, animated: true, completion: nil)
+            
+            return
+        }
+        
+        napTime!.setValue(startDate, forKey: "startTime")
+        napTime!.setValue(endDate, forKey: "endTime")
+        
+        do {
+            try managedObjectContext.save()
+        } catch let error as NSError  {
+            print("Could not save \(error), \(error.userInfo)")
+        }
+
+        unwind()
+    }
+    
+    @IBAction func startDatePickerValueChanged(sender: AnyObject) {
+        saveButton.enabled = checkValidDates()
+    }
+    
+    @IBAction func endDatePickerValueChanged(sender: AnyObject) {
+        saveButton.enabled = checkValidDates()
+    }
+    
+    // MARK: Validation
     func checkValidDates() -> Bool {
         let startDate = startDatePicker.date
         let endDate = endDatePicker.date
@@ -48,50 +134,46 @@ class AddViewController: UIViewController {
         return false
     }
     
-    // MARK: Navigation
-    
-    // This method lets you configure a view controller before it's presented.
-    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-        if saveButton === sender {
-            let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
-            
-            let managedObjectContext = appDelegate.managedObjectContext
-            
-            let entity =  NSEntityDescription.entityForName("NapTime", inManagedObjectContext:managedObjectContext)
-            
-            let startDate = startDatePicker.date
-            let endDate = endDatePicker.date
-            
-            let napTime = NSManagedObject(entity: entity!, insertIntoManagedObjectContext: managedObjectContext)
-            
-            napTime.setValue(startDate, forKey: "startTime")
-            napTime.setValue(endDate, forKey: "endTime")
-            
-            do {
-                try managedObjectContext.save()
-            } catch let error as NSError  {
-                print("Could not save \(error), \(error.userInfo)")
-            }
-
-        }
-    }
-    
-    @IBAction func cancelAction(sender: UIBarButtonItem) {
-        let isPresentingInAddNapMode = presentingViewController is UINavigationController
+    func checkCollisions() -> Bool {
+        let startDate = startDatePicker.date
+        let endDate = endDatePicker.date
         
-        if isPresentingInAddNapMode {
-            dismissViewControllerAnimated(true, completion: nil)
+        let fetchRequest = NSFetchRequest(entityName: "NapTime")
+        fetchRequest.predicate = NSPredicate(format: "(startTime <= %@ AND endTime > %@) OR (startTime < %@ AND endTime >= %@) ", startDate, startDate, endDate, endDate)
+        fetchRequest.fetchLimit = 1;
+        
+        do {
+            let results = try managedObjectContext.executeFetchRequest(fetchRequest)
+            
+            if results.count > 0 {
+                if napTime == nil {
+                    return true
+                }
+                
+                let napTimes = results as! [NSManagedObject]
+                for fetchedNapTime in napTimes {
+                    /*let fetchedStartDate = fetchedNapTime.valueForKey("startTime") as? NSDate
+                    let fetchedEndDate = fetchedNapTime.valueForKey("endTime") as? NSDate
+                    
+                    let modifiedStartDate = napTime!.valueForKey("startTime") as? NSDate
+                    let modifiedEndDate = napTime!.valueForKey("endTime") as? NSDate
+                    
+                    if modifiedStartDate == nil || modifiedEndDate == nil {
+                        continue
+                    }
+                    
+                    if modifiedStartDate!.compare(fetchedStartDate) != .OrderedSame || modifiedEndDate!.compare(fetchedEndDate) != .OrderedSame {
+                        return true
+                    }*/
+                    if !fetchedNapTime.isEqual(napTime) {
+                        return true
+                    }
+                }
+            }
+        } catch let error as NSError  {
+            print("Could not fetch \(error), \(error.userInfo)")
         }
-        else {
-            navigationController!.popViewControllerAnimated(true)
-        }
-    }
-    
-    @IBAction func startDatePickerValueChanged(sender: AnyObject) {
-        saveButton.enabled = checkValidDates()
-    }
-    
-    @IBAction func endDatePickerValueChanged(sender: AnyObject) {
-        saveButton.enabled = checkValidDates()
+        
+        return false
     }
 }
