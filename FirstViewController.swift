@@ -41,12 +41,21 @@ class FirstViewController: UIViewController {
         self.startTime = savedStartTime()
         
         if (self.startTime != 0) {
-            stopWatchButton.setTitle("Stop", forState: UIControlState.Normal);
-
-            updateStartTimeLabel()
-            updateTimeOnStopWatch()
+            let currentTime = NSDate.timeIntervalSinceReferenceDate()
+            let elapsedTime: NSTimeInterval = currentTime - self.startTime
             
-            scheduleTimers()
+            if elapsedTime > 24 * 60 * 60 {
+                self.startTime = 0
+                saveStartTime()
+            }
+            else {
+                stopWatchButton.setTitle("Stop", forState: UIControlState.Normal);
+
+                updateStartTimeLabel()
+                updateTimeOnStopWatch()
+            
+                scheduleTimers()
+            }
         }
         
         refreshLabelsVisibility()
@@ -74,13 +83,23 @@ class FirstViewController: UIViewController {
         self.startTime = savedStartTime()
         
         if (self.startTime != 0) {
-            updateStartTimeLabel()
-            updateTimeOnStopWatch()
+            let currentTime = NSDate.timeIntervalSinceReferenceDate()
+            let elapsedTime: NSTimeInterval = currentTime - self.startTime
             
-            scheduleTimers()
+            if elapsedTime > 24 * 60 * 60 {
+                self.startTime = 0
+                saveStartTime()
+            }
+            else {
+                updateStartTimeLabel()
+                updateTimeOnStopWatch()
+            
+                scheduleTimers()
+            }
         }
         
         refreshLabelsVisibility()
+        
         fetchData()
         refreshCircle()
     }
@@ -158,9 +177,7 @@ class FirstViewController: UIViewController {
         
         scheduleTimers()
         
-        let defaults = NSUserDefaults.standardUserDefaults()
-        defaults.setDouble(self.startTime, forKey: startKey)
-        defaults.synchronize()
+        saveStartTime()
         
         updateStartTimeLabel()
         
@@ -191,15 +208,23 @@ class FirstViewController: UIViewController {
         
         self.startTime = 0
         self.refreshLabelsVisibility()
-        let defaults = NSUserDefaults.standardUserDefaults()
-        defaults.setDouble(0, forKey: startKey)
-        defaults.synchronize()
+        saveStartTime()
         
         fetchData()
         refreshCircle()
     }
     
+    func saveStartTime() {
+        let defaults = NSUserDefaults.standardUserDefaults()
+        defaults.setDouble(self.startTime, forKey: startKey)
+        defaults.synchronize()
+    }
+    
     func updateTimeOnStopWatch() {
+        if self.startTime == 0 {
+            return
+        }
+        
         let currentTime = NSDate.timeIntervalSinceReferenceDate()
         
         //Find the difference between current time and start time.
@@ -239,6 +264,12 @@ class FirstViewController: UIViewController {
     }
     
     func updateStartTimeLabel() {
+        if self.startTime == 0 {
+            self.startTimeLabel.text = ""
+            
+            return
+        }
+        
         let dateFormatter = NSDateFormatter()
         dateFormatter.dateFormat = "HH:mm"
         
@@ -247,6 +278,8 @@ class FirstViewController: UIViewController {
     
     func refreshLabelsVisibility() {
         if self.startTime == 0 {
+            self.startTimeLabel.text = ""
+            self.stopWatchLabel.text = "00:00:00"
             self.stopWatchLabel.hidden = true
             self.startTimeLabel.hidden = true
         }

@@ -90,7 +90,7 @@ class AddViewController: UIViewController {
         
         if checkCollisions() {
             let alertController = UIAlertController(title: "Error", message:
-                "Dates collision", preferredStyle: UIAlertControllerStyle.Alert)
+                "Dates conflict", preferredStyle: UIAlertControllerStyle.Alert)
             alertController.addAction(UIAlertAction(title: "Dismiss", style: UIAlertActionStyle.Default,handler: nil))
             
             self.presentViewController(alertController, animated: true, completion: nil)
