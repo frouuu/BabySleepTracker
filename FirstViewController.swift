@@ -22,7 +22,7 @@ class FirstViewController: UIViewController {
     var timer : NSTimer = NSTimer()
     var circleTimer : NSTimer = NSTimer()
     var circularDayStats : CircularDayStats!
-    var napTimes = [NSManagedObject]()
+    var napTimes : [NSManagedObject] = []
     
     let managedObjectContext = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
     
@@ -129,7 +129,6 @@ class FirstViewController: UIViewController {
     func refreshCircle() {
         let startOfDayForToday = NSCalendar.currentCalendar().startOfDayForDate(NSDate())
         
-        //let angles = [0, M_PI]
         var angles = [Double]()
         
         for napTime in napTimes {
