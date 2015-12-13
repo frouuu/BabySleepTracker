@@ -12,13 +12,19 @@ import CoreData
 class SecondViewController: UIViewController {
     
     let managedObjectContext = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
-
+    let maxResults = 100
+    
     @IBOutlet weak var barChartView: BarChartView!
     @IBOutlet weak var segmentedControl: UISegmentedControl!
     
-    var napTimes = [NSManagedObject]()
+    @IBOutlet weak var olderButton: UIButton!
+    @IBOutlet weak var newerButton: UIButton!
+    
     var page = 1
+    var napTimes = [NSManagedObject]()
     var napData = [String : [ChartData]]()
+    var fromDate = NSDate()
+    var toDate = NSDate()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -26,12 +32,11 @@ class SecondViewController: UIViewController {
         let aSelector : Selector = "segmentedControlTapped"
         self.segmentedControl.addTarget(self, action: aSelector, forControlEvents: .ValueChanged)
         
-        self.barChartView.hidden = false
+        refreshPageButtons()
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-       
     }
 
     override func viewWillAppear(animated: Bool) {
@@ -41,91 +46,125 @@ class SecondViewController: UIViewController {
     }
     
     func fetchData() {
-        let seconds = self.page * 6 * 24 * 60 * 60
+        let seconds = (self.page * 7 - 1) * 24 * 60 * 60
         let startOfToday = NSCalendar.currentCalendar().startOfDayForDate(NSDate())
-        let fromDate = startOfToday.dateByAddingTimeInterval(NSTimeInterval(-seconds))
+        fromDate = startOfToday.dateByAddingTimeInterval(NSTimeInterval(-seconds))
+        if self.page == 1 {
+            toDate = NSDate()
+        }
+        else {
+            toDate = fromDate.dateByAddingTimeInterval(NSTimeInterval(7 * 24 * 60 * 60))
+        }
         
         let fetchRequest = NSFetchRequest(entityName: "NapTime")
         fetchRequest.sortDescriptors = [NSSortDescriptor(key: "startTime", ascending: false)]
-        fetchRequest.predicate = NSPredicate(format: "endTime > %@", fromDate)
-        fetchRequest.fetchLimit = 100;
+        fetchRequest.predicate = NSPredicate(format: "endTime > %@ AND startTime < %@", fromDate, toDate)
+        fetchRequest.fetchLimit = maxResults;
         
         do {
             let results = try self.managedObjectContext.executeFetchRequest(fetchRequest)
             
             napTimes = results as! [NSManagedObject]
-            napData.removeAll()
-            
-            var labels = [String:String]()
-            
-            let currentCalendar = NSCalendar.currentCalendar()
-
-            for napTime in napTimes {
-                let startDate = napTime.valueForKey("startTime") as? NSDate
-                let endDate = napTime.valueForKey("endTime") as? NSDate
-                
-                if startDate == nil || endDate == nil {
-                    continue
-                }
-                
-                let dateFormatter = NSDateFormatter()
-                dateFormatter.dateFormat = "yyyy-MM-dd";
-                
-                let startDateString = dateFormatter.stringFromDate(startDate!)
-                let endDateString = dateFormatter.stringFromDate(endDate!)
-                
-                
-                if startDate!.compare(fromDate) == NSComparisonResult.OrderedDescending {
-                    let endDate2 : NSDate
-                    
-                    if !currentCalendar.isDate(startDate!, inSameDayAsDate: endDate!) {
-                        let startOfStartDate = NSCalendar.currentCalendar().startOfDayForDate(startDate!)
-                        
-                        endDate2 = startOfStartDate.dateByAddingTimeInterval(24 * 60 * 60)
-                    }
-                    else {
-                        endDate2 = endDate!
-                    }
-                    
-                    let chartData = ChartData(startTime: startDate!, endTime: endDate2)
-                    
-                    if napData[startDateString] == nil {
-                        napData[startDateString] = [chartData]
-                    }
-                    else {
-                        (napData[startDateString])!.append(chartData)
-                    }
-                }
-                
-                if !currentCalendar.isDate(startDate!, inSameDayAsDate: endDate!) {
-                    let startOfEndDate = NSCalendar.currentCalendar().startOfDayForDate(endDate!)
-                    
-                    let chartData = ChartData(startTime: startOfEndDate, endTime: endDate!)
-                    
-                    if napData[endDateString] == nil {
-                        napData[endDateString] = [chartData]
-                    }
-                    else {
-                        (napData[endDateString])!.append(chartData)
-                    }
-                }
-            }
-            
-            for dateString in napData.keys {
-                let dateFormatter = NSDateFormatter()
-                dateFormatter.dateFormat = "E";
-                
-                let firstData = napData[dateString]![0] as ChartData
-                let startDateInFirstData = firstData.startTime
-                labels[dateString] = dateFormatter.stringFromDate(startDateInFirstData)
-            }
-            
-            self.barChartView.napDates = self.napData
-            self.barChartView.labels = labels
-            
         } catch let error as NSError {
             print("Could not fetch \(error), \(error.userInfo)")
         }
+        
+        refreshBars()
+    }
+    
+    func refreshBars() {
+        napData.removeAll()
+        
+        var labels = [String:String]()
+        
+        let currentCalendar = NSCalendar.currentCalendar()
+        
+        for napTime in napTimes {
+            let startDate = napTime.valueForKey("startTime") as? NSDate
+            let endDate = napTime.valueForKey("endTime") as? NSDate
+            
+            if startDate == nil || endDate == nil {
+                continue
+            }
+            
+            let dateFormatter = NSDateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd";
+            
+            let startDateString = dateFormatter.stringFromDate(startDate!)
+            let endDateString = dateFormatter.stringFromDate(endDate!)
+            
+            if startDate!.compare(fromDate) == NSComparisonResult.OrderedDescending {
+                let endDate2 : NSDate
+                
+                if !currentCalendar.isDate(startDate!, inSameDayAsDate: endDate!) {
+                    let startOfStartDate = NSCalendar.currentCalendar().startOfDayForDate(startDate!)
+                    
+                    endDate2 = startOfStartDate.dateByAddingTimeInterval(24 * 60 * 60)
+                }
+                else {
+                    endDate2 = endDate!
+                }
+                
+                let chartData = ChartData(startTime: startDate!, endTime: endDate2)
+                
+                if napData[startDateString] == nil {
+                    napData[startDateString] = [chartData]
+                }
+                else {
+                    (napData[startDateString])!.append(chartData)
+                }
+            }
+            
+            if endDate!.compare(toDate) == NSComparisonResult.OrderedAscending {
+            if !currentCalendar.isDate(startDate!, inSameDayAsDate: endDate!) {
+                let startOfEndDate = NSCalendar.currentCalendar().startOfDayForDate(endDate!)
+                
+                let chartData = ChartData(startTime: startOfEndDate, endTime: endDate!)
+                
+                if napData[endDateString] == nil {
+                    napData[endDateString] = [chartData]
+                }
+                else {
+                    (napData[endDateString])!.append(chartData)
+                }
+            }
+            }
+        }
+        
+        for dateString in napData.keys {
+            let dateFormatter = NSDateFormatter()
+            dateFormatter.dateFormat = self.page == 1 ? "E" : "dd-LLL";
+            
+            let firstData = napData[dateString]![0] as ChartData
+            let startDateInFirstData = firstData.startTime
+            labels[dateString] = dateFormatter.stringFromDate(startDateInFirstData)
+        }
+        
+        for i in 0...6
+        {
+            let interval = NSTimeInterval(60 * 60 * 24 * i)
+            let nextDate = fromDate.dateByAddingTimeInterval(interval)
+            
+            let dateFormatter = NSDateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd";
+            
+            let nextDateString = dateFormatter.stringFromDate(nextDate)
+            
+            dateFormatter.dateFormat = self.page == 1 ? "E" : "dd-LLL";
+            
+            if !napData.keys.contains(nextDateString) {
+                napData[nextDateString] = []
+                labels[nextDateString] = dateFormatter.stringFromDate(nextDate)
+            }
+        }
+        
+        self.barChartView.napDates = self.napData
+        self.barChartView.labels = labels
+    }
+    
+    func refreshPageButtons() {
+        self.olderButton.hidden = false
+        self.newerButton.hidden = (self.page == 1)
     }
     
     func segmentedControlTapped() {
@@ -161,5 +200,21 @@ class SecondViewController: UIViewController {
         return "\(strHours):\(strMinutes):\(strSeconds)"
     }
 
+    @IBAction func olderButtonTapped(sender: AnyObject) {
+        self.page++
+        
+        refreshPageButtons()
+        fetchData()
+    }
+    
+    @IBAction func newerButtonTapped(sender: AnyObject) {
+        if self.page > 1 {
+            self.page--
+            
+            refreshPageButtons()
+            fetchData()
+        }
+    }
+    
 }
 
