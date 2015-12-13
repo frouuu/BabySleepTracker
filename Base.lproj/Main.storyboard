@@ -22,7 +22,7 @@
                             <imageView userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" preservesSuperviewLayoutMargins="YES" image="Background" translatesAutoresizingMaskIntoConstraints="NO" id="0Uv-rX-ZFS">
                                 <rect key="frame" x="0.0" y="0.0" width="600" height="551"/>
                             </imageView>
-                            <view alpha="0.80000000000000004" contentMode="scaleToFill" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="RwP-oL-bzj" customClass="CircularDayStats" customModule="BabySleepTracker" customModuleProvider="target">
+                            <view alpha="0.80000000000000004" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="RwP-oL-bzj" customClass="CircularDayStats" customModule="BabySleepTracker" customModuleProvider="target">
                                 <rect key="frame" x="150" y="130" width="300" height="300"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                 <constraints>
@@ -47,7 +47,7 @@
                                     </userDefinedRuntimeAttribute>
                                 </userDefinedRuntimeAttributes>
                             </view>
-                            <button opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" ambiguous="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="H27-I6-LgK">
+                            <button opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="H27-I6-LgK">
                                 <rect key="frame" x="225" y="205" width="150" height="150"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="150" id="38C-KX-rqT"/>
@@ -198,22 +198,32 @@
                                     </mask>
                                 </variation>
                             </segmentedControl>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="zlg-Cq-sxf">
-                                <rect key="frame" x="20" y="33" width="38" height="30"/>
-                                <state key="normal" title="Older">
-                                    <color key="titleColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                                </state>
-                                <connections>
-                                    <action selector="olderButtonTapped:" destination="8rJ-Kc-sve" eventType="touchUpInside" id="W6N-M4-dec"/>
-                                </connections>
-                            </button>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="6Oc-dO-8Ej">
-                                <rect key="frame" x="535" y="35" width="45" height="30"/>
-                                <state key="normal" title="Newer">
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="6Oc-dO-8Ej">
+                                <rect key="frame" x="480" y="38" width="100" height="22"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="100" id="Smf-Qr-Dki"/>
+                                    <constraint firstAttribute="height" constant="22" id="laH-5d-mfj"/>
+                                </constraints>
+                                <inset key="contentEdgeInsets" minX="84" minY="0.0" maxX="0.0" maxY="0.0"/>
+                                <state key="normal" image="next">
                                     <color key="titleColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 </state>
                                 <connections>
                                     <action selector="newerButtonTapped:" destination="8rJ-Kc-sve" eventType="touchUpInside" id="fCt-f3-VXd"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="zlg-Cq-sxf">
+                                <rect key="frame" x="20" y="38" width="100" height="22"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="22" id="eMw-EH-9Wp"/>
+                                    <constraint firstAttribute="width" constant="100" id="wO8-a9-u4H"/>
+                                </constraints>
+                                <inset key="contentEdgeInsets" minX="-84" minY="0.0" maxX="0.0" maxY="0.0"/>
+                                <state key="normal" image="prev">
+                                    <color key="titleColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                </state>
+                                <connections>
+                                    <action selector="olderButtonTapped:" destination="8rJ-Kc-sve" eventType="touchUpInside" id="W6N-M4-dec"/>
                                 </connections>
                             </button>
                         </subviews>
@@ -257,7 +267,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="4Nw-L8-lE0" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="981" y="-553"/>
+            <point key="canvasLocation" x="981.5" y="-553"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="jPN-t4-BPD">
@@ -611,6 +621,8 @@
         <image name="Background" width="320" height="480"/>
         <image name="chart" width="30" height="30"/>
         <image name="list" width="30" height="30"/>
+        <image name="next" width="7" height="15"/>
+        <image name="prev" width="7" height="15"/>
         <image name="stopwatch" width="30" height="30"/>
     </resources>
     <inferredMetricsTieBreakers>
