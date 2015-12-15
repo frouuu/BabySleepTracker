@@ -22,7 +22,6 @@ class FirstViewController: UIViewController {
     var timer : NSTimer = NSTimer()
     var circleTimer : NSTimer = NSTimer()
     var circularDayStats : CircularDayStats!
-    var napTimes : [NSManagedObject] = []
     
     let managedObjectContext = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
     
@@ -64,8 +63,7 @@ class FirstViewController: UIViewController {
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
         
-        fetchData()
-        refreshCircle()
+        fetchDataAndRefreshCircle()
     }
 
     
@@ -100,8 +98,7 @@ class FirstViewController: UIViewController {
         
         refreshLabelsVisibility()
         
-        fetchData()
-        refreshCircle()
+        fetchDataAndRefreshCircle()
     }
 
     override func didReceiveMemoryWarning() {
@@ -109,7 +106,7 @@ class FirstViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
     
-    func fetchData() {
+    func fetchDataAndRefreshCircle() {
         let fetchRequest = NSFetchRequest(entityName: "NapTime")
         let startOfDayForToday = NSCalendar.currentCalendar().startOfDayForDate(NSDate())
         
@@ -118,15 +115,14 @@ class FirstViewController: UIViewController {
         fetchRequest.fetchLimit = 60;
         
         do {
-            let results = try self.managedObjectContext.executeFetchRequest(fetchRequest)
-            
-            napTimes = results as! [NSManagedObject]
+            let napTimes = try self.managedObjectContext.executeFetchRequest(fetchRequest) as! [NSManagedObject]
+            refreshCircleWithNapTimes(napTimes)
         } catch let error as NSError {
             print("Could not fetch \(error), \(error.userInfo)")
         }
     }
     
-    func refreshCircle() {
+    func refreshCircleWithNapTimes(napTimes : [NSManagedObject]) {
         let startOfDayForToday = NSCalendar.currentCalendar().startOfDayForDate(NSDate())
         
         var angles = [Double]()
@@ -140,13 +136,17 @@ class FirstViewController: UIViewController {
                 startTimeTimeInterval = 0
             }
             
-            let endTimeTimeInterval :NSTimeInterval = endTime!.timeIntervalSinceDate(startOfDayForToday)
+            let endTimeTimeInterval : NSTimeInterval = endTime!.timeIntervalSinceDate(startOfDayForToday)
             
-            let startAngle = Double(startTimeTimeInterval / 60 * 2 * M_PI / 1440)
-            let angle = Double((endTimeTimeInterval - startTimeTimeInterval) / 60 * 2 * M_PI / 1440)
+            let elapsedTime = endTimeTimeInterval - startTimeTimeInterval
             
-            angles.append(startAngle)
-            angles.append(angle)
+            if elapsedTime > 30 {
+                let startAngle = Double(startTimeTimeInterval / 60 * 2 * M_PI / 1440)
+                let angle = Double(elapsedTime / 60 * 2 * M_PI / 1440)
+            
+                angles.append(startAngle)
+                angles.append(angle)
+            }
         }
         
         if self.startTime != 0 {
@@ -156,11 +156,15 @@ class FirstViewController: UIViewController {
                 seconds = 0
                 startTimeNsDate = startOfDayForToday
             }
-            let startAngle = Double(seconds  / 60 * 2 * M_PI / 1440)
-            let angle = Double(NSDate().timeIntervalSinceDate(startTimeNsDate) / 60 * 2 * M_PI / 1440)
+            let elapsedTime = NSDate().timeIntervalSinceDate(startTimeNsDate)
             
-            angles.append(startAngle)
-            angles.append(angle)
+            if elapsedTime > 30 {
+                let startAngle = Double(seconds  / 60 * 2 * M_PI / 1440)
+                let angle = Double(elapsedTime / 60 * 2 * M_PI / 1440)
+            
+                angles.append(startAngle)
+                angles.append(angle)
+            }
         }
         
         let currentTimeTimeInterval = NSDate().timeIntervalSinceDate(startOfDayForToday)
@@ -172,15 +176,15 @@ class FirstViewController: UIViewController {
     func startTapped() {
         stopWatchButton.setTitle("Stop", forState: UIControlState.Normal);
         self.startTime = NSDate.timeIntervalSinceReferenceDate()
-        refreshLabelsVisibility()
         
-        scheduleTimers()
+        refreshLabelsVisibility()
+        updateStartTimeLabel()
         
         saveStartTime()
         
-        updateStartTimeLabel()
+        scheduleTimers()
         
-        refreshCircle()
+        fetchDataAndRefreshCircle()
     }
     
     func stopTapped() {
@@ -209,8 +213,7 @@ class FirstViewController: UIViewController {
         self.refreshLabelsVisibility()
         saveStartTime()
         
-        fetchData()
-        refreshCircle()
+        fetchDataAndRefreshCircle()
     }
     
     func saveStartTime() {
@@ -257,7 +260,7 @@ class FirstViewController: UIViewController {
     
     func scheduleTimers() {
         let aSelector : Selector = "updateTimeOnStopWatch"
-        let cSelector : Selector = "refreshCircle"
+        let cSelector : Selector = "fetchDataAndRefreshCircle"
         timer = NSTimer.scheduledTimerWithTimeInterval(1, target: self, selector: aSelector, userInfo: nil, repeats: true)
         circleTimer = NSTimer.scheduledTimerWithTimeInterval(60, target: self, selector: cSelector, userInfo: nil, repeats: true)
     }

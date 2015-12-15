@@ -22,7 +22,7 @@
                             <imageView userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" preservesSuperviewLayoutMargins="YES" image="Background" translatesAutoresizingMaskIntoConstraints="NO" id="0Uv-rX-ZFS">
                                 <rect key="frame" x="0.0" y="0.0" width="600" height="551"/>
                             </imageView>
-                            <view alpha="0.80000000000000004" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="RwP-oL-bzj" customClass="CircularDayStats" customModule="BabySleepTracker" customModuleProvider="target">
+                            <view alpha="0.80000000000000004" contentMode="scaleToFill" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="RwP-oL-bzj" customClass="CircularDayStats" customModule="BabySleepTracker" customModuleProvider="target">
                                 <rect key="frame" x="150" y="130" width="300" height="300"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                 <constraints>
@@ -47,7 +47,7 @@
                                     </userDefinedRuntimeAttribute>
                                 </userDefinedRuntimeAttributes>
                             </view>
-                            <button opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="H27-I6-LgK">
+                            <button opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" ambiguous="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="H27-I6-LgK">
                                 <rect key="frame" x="225" y="205" width="150" height="150"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="150" id="38C-KX-rqT"/>
@@ -170,13 +170,13 @@
                                         <color key="value" red="1" green="0.99573095550000001" blue="0.69283599760000003" alpha="1" colorSpace="calibratedRGB"/>
                                     </userDefinedRuntimeAttribute>
                                     <userDefinedRuntimeAttribute type="color" keyPath="gradient2Color">
-                                        <color key="value" red="0.97312786610000002" green="1" blue="0.83172149149999997" alpha="1" colorSpace="calibratedRGB"/>
+                                        <color key="value" red="0.99804632959999995" green="1" blue="0.59173318529999996" alpha="1" colorSpace="calibratedRGB"/>
                                     </userDefinedRuntimeAttribute>
                                     <userDefinedRuntimeAttribute type="color" keyPath="gradient3Color">
-                                        <color key="value" red="0.99804632955510608" green="1" blue="0.59173318529097085" alpha="1" colorSpace="calibratedRGB"/>
+                                        <color key="value" red="1" green="0.99487611478588645" blue="0.7305938196541899" alpha="1" colorSpace="calibratedRGB"/>
                                     </userDefinedRuntimeAttribute>
                                     <userDefinedRuntimeAttribute type="color" keyPath="gradient4Color">
-                                        <color key="value" red="0.97312786610000002" green="1" blue="0.83172149149999997" alpha="1" colorSpace="calibratedRGB"/>
+                                        <color key="value" red="0.99804632959999995" green="1" blue="0.59173318529999996" alpha="1" colorSpace="calibratedRGB"/>
                                     </userDefinedRuntimeAttribute>
                                 </userDefinedRuntimeAttributes>
                             </view>
@@ -462,6 +462,7 @@
                                     </label>
                                     <datePicker contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" datePickerMode="dateAndTime" minuteInterval="1" translatesAutoresizingMaskIntoConstraints="NO" id="LQE-vp-ZHw">
                                         <rect key="frame" x="0.0" y="90" width="600" height="180"/>
+                                        <color key="backgroundColor" red="0.87093667760000004" green="0.87257213680000001" blue="0.94903846150000004" alpha="1" colorSpace="calibratedRGB"/>
                                         <constraints>
                                             <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="180" id="JrO-fy-k7Q"/>
                                             <constraint firstAttribute="height" constant="180" id="Qqr-KW-SFx"/>
@@ -511,6 +512,7 @@
                                 <subviews>
                                     <datePicker contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" datePickerMode="dateAndTime" minuteInterval="1" translatesAutoresizingMaskIntoConstraints="NO" id="mjb-Mp-bwn">
                                         <rect key="frame" x="0.0" y="26" width="600" height="180"/>
+                                        <color key="backgroundColor" red="0.87093667760000004" green="0.87257213680000001" blue="0.94903846150000004" alpha="1" colorSpace="calibratedRGB"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="180" id="89x-wt-Ew7"/>
                                         </constraints>

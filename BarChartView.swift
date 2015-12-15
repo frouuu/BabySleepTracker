@@ -55,6 +55,10 @@ enum ChartType {
         
         let ctx = UIGraphicsGetCurrentContext()
         
+        CGContextSetAlpha(ctx, 0.3)
+        fillColor.setFill()
+        CGContextFillRect(ctx, graphRect)
+        
         // lines
         CGContextSetLineWidth(ctx, lineWidth)
         CGContextSetStrokeColorWithColor(ctx, linesColor.CGColor)

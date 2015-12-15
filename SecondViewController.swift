@@ -21,8 +21,6 @@ class SecondViewController: UIViewController {
     @IBOutlet weak var newerButton: UIButton!
     
     var page = 1
-    var napTimes = [NSManagedObject]()
-    var napData = [String : [ChartData]]()
     var fromDate = NSDate()
     var toDate = NSDate()
     
@@ -62,18 +60,16 @@ class SecondViewController: UIViewController {
         fetchRequest.fetchLimit = maxResults;
         
         do {
-            let results = try self.managedObjectContext.executeFetchRequest(fetchRequest)
+            let results = try self.managedObjectContext.executeFetchRequest(fetchRequest) as! [NSManagedObject]
             
-            napTimes = results as! [NSManagedObject]
+            refreshBarsWithNapTimes(results)
         } catch let error as NSError {
             print("Could not fetch \(error), \(error.userInfo)")
         }
-        
-        refreshBars()
     }
     
-    func refreshBars() {
-        napData.removeAll()
+    func refreshBarsWithNapTimes(napTimes: [NSManagedObject]) {
+        var napData = [String : [ChartData]]()
         
         var labels = [String:String]()
         
@@ -158,7 +154,7 @@ class SecondViewController: UIViewController {
             }
         }
         
-        self.barChartView.napDates = self.napData
+        self.barChartView.napDates = napData
         self.barChartView.labels = labels
     }
     

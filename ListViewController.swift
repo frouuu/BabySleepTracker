@@ -15,7 +15,7 @@ class ListViewController: UIViewController, UITableViewDelegate, UITableViewData
     
     @IBOutlet weak var napTimesTableView: UITableView!
     
-    var napTimes = [NSManagedObject]()
+    var napTimes : [NSManagedObject] = []
     var page = 1
     
     // MARK: UIViewController
@@ -47,15 +47,19 @@ class ListViewController: UIViewController, UITableViewDelegate, UITableViewData
     }
     
     func fetchData() {
+        napTimes.removeAll()
+        
         let fetchRequest = NSFetchRequest(entityName: "NapTime")
         fetchRequest.sortDescriptors = [NSSortDescriptor(key: "startTime", ascending: false)]
         
         fetchRequest.fetchLimit = 100;
         
         do {
-            let results = try self.managedObjectContext.executeFetchRequest(fetchRequest)
+            let results = try self.managedObjectContext.executeFetchRequest(fetchRequest) as! [NSManagedObject]
             
-            napTimes = results as! [NSManagedObject]
+            for result in results {
+                napTimes.append(result)
+            }
         } catch let error as NSError {
             print("Could not fetch \(error), \(error.userInfo)")
         }
@@ -131,7 +135,7 @@ class ListViewController: UIViewController, UITableViewDelegate, UITableViewData
         
         if NSCalendar.currentCalendar().isDateInToday(startTime!) {
             let dateFormatter = NSDateFormatter()
-            dateFormatter.dateFormat = "'Today at' HH:mm";
+            dateFormatter.dateFormat = "'Today at' HH:mm:ss";
             
             cell.startTimeLabel.text   = dateFormatter.stringFromDate(startTime!)
         }
@@ -162,7 +166,7 @@ class ListViewController: UIViewController, UITableViewDelegate, UITableViewData
     
     func tableView(tableView: UITableView,
         numberOfRowsInSection section: Int) -> Int {
-            return napTimes.count;
+            return napTimes.count
     }
     
     // Override to support editing the table view.

@@ -139,7 +139,7 @@ class AddViewController: UIViewController {
         let endDate = endDatePicker.date
         
         let fetchRequest = NSFetchRequest(entityName: "NapTime")
-        fetchRequest.predicate = NSPredicate(format: "(startTime <= %@ AND endTime > %@) OR (startTime < %@ AND endTime >= %@) ", startDate, startDate, endDate, endDate)
+        fetchRequest.predicate = NSPredicate(format: "(startTime <= %@ AND endTime > %@) OR (startTime < %@ AND endTime >= %@) OR (startTime >= %@ AND endTime <= %@)", startDate, startDate, endDate, endDate, startDate, endDate)
         fetchRequest.fetchLimit = 1;
         
         do {
@@ -152,19 +152,6 @@ class AddViewController: UIViewController {
                 
                 let napTimes = results as! [NSManagedObject]
                 for fetchedNapTime in napTimes {
-                    /*let fetchedStartDate = fetchedNapTime.valueForKey("startTime") as? NSDate
-                    let fetchedEndDate = fetchedNapTime.valueForKey("endTime") as? NSDate
-                    
-                    let modifiedStartDate = napTime!.valueForKey("startTime") as? NSDate
-                    let modifiedEndDate = napTime!.valueForKey("endTime") as? NSDate
-                    
-                    if modifiedStartDate == nil || modifiedEndDate == nil {
-                        continue
-                    }
-                    
-                    if modifiedStartDate!.compare(fetchedStartDate) != .OrderedSame || modifiedEndDate!.compare(fetchedEndDate) != .OrderedSame {
-                        return true
-                    }*/
                     if !fetchedNapTime.isEqual(napTime) {
                         return true
                     }
